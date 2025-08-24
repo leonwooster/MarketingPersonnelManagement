@@ -1,108 +1,34 @@
-{
-  "version": "1.0",
-  "settings": {
-    "exclude": [
-      "**/bin/**",
-      "**/obj/**",
-      "**/node_modules/**",
-      "**/.git/**",
-      "**/packages/**"
-    ],
-    "watcher": {
-      "include": [
-        "**/*.cs",
-        "**/*.csproj",
-        "**/*.sln",
-        "**/*.cshtml",
-        "**/*.js",
-        "**/*.css",
-        "**/*.json",
-        "**/*.sql",
-        "**/*.md"
-      ],
-      "exclude": [
-        "**/bin/**",
-        "**/obj/**",
-        "**/wwwroot/dist/**",
-        "**/wwwroot/lib/**"
-      ]
-    },
-    "formatting": {
-      "indentSize": 2,
-      "useTabs": false,
-      "insertFinalNewline": true,
-      "trimTrailingWhitespace": true
-    },
-    "linting": {
-      "enabled": true,
-      "rules": {
-        "unused-imports": "warn",
-        "unused-vars": "warn"
-      }
-    },
-    "features": {
-      "autoSave": "afterDelay",
-      "autoSaveDelay": 1000,
-      "autoFormatOnSave": true
-    },
-    "tasks": {
-      "build": {
-        "description": "Build entire solution",
-        "command": "dotnet build CompanyA.WebUI/CompanyA.WebUI.sln -c Release"
-      },
-      "test": {
-        "description": "Run unit/integration tests (if present)",
-        "command": "dotnet test --no-build -c Release"
-      },
-      "publish:api": {
-        "description": "Publish API for IIS to Deploy folder",
-        "command": "dotnet publish CompanyA.API/CompanyA.API.csproj -c Release -o ../Deploy/API"
-      },
-      "publish:webui": {
-        "description": "Publish WebUI for IIS to Deploy folder",
-        "command": "dotnet publish CompanyA.WebUI/CompanyA.WebUI.csproj -c Release -o ../Deploy/WebUI"
-      },
-      "package": {
-        "description": "Prepare SQL, Deploy and clean Source structure",
-        "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Write-Host 'Package placeholder: ensure SQL/, Deploy/, Source/ are populated and binaries excluded'\""
-      }
-    },
-    "project": {
-      "folders": {
-        "sql": "SQL/",
-        "deploy": "Deploy/",
-        "source": "Source/"
-      },
-      "browsers": ["Chrome", "Firefox", "Edge"],
-      "ui": {
-        "singlePage": true,
-        "frameworks": ["Bootstrap"],
-        "graphLibrary": "Chart.js"
-      }
-    },
-    "guidelines": {
-      "code_review": [
-        "Enforce server-side validation: name required, age >= 19, phone non-empty, commission_profile_id valid",
-        "No sales edit endpoint; only add/delete",
-        "Deleting personnel requires confirmation and must cascade sales",
-        "REST only: WebUI must call API for all data"
-      ],
-      "security": [
-        "Do not commit secrets; use appsettings.*.json with environment overrides",
-        "Enable CORS appropriately for WebUI/API if hosted separately",
-        "Validate and sanitize all inputs at API boundary"
-      ],
-      "database": [
-        "Follow exact schema: fields and types as specified",
-        "Use SQL Server 2016-compatible syntax",
-        "FK Sales.personnel_id -> Personnel.Id ON DELETE CASCADE",
-        "FK Personnel.commission_profile_id -> CommissionProfile.Id RESTRICT"
-      ],
-      "testing": [
-        "API integration tests for CRUD and cascade delete",
-        "Commission payout formula: fixed + percentage * monthly sales",
-        "Cross-browser smoke on Chrome/Firefox/Edge"
-      ]
-    }
-  }
-}
+# Windsurf Project Rules - Marketing Personnel Management System
+
+## File Management Tool Preference
+- **PRIMARY**: Use standard Windsurf tools (Read, Edit, Write, etc.) for file operations
+- **FALLBACK**: Use MCP filesystem tools (mcp0_*) only when standard tools fail or are insufficient
+- **RATIONALE**: Cost optimization - use MCP tools only when necessary
+
+## MCP Filesystem Tools to Use:
+- `mcp0_read_text_file` instead of `Read`
+- `mcp0_write_file` instead of `write_to_file` or `Edit`
+- `mcp0_edit_file` instead of `Edit` or `MultiEdit`
+- `mcp0_create_directory` for directory creation
+- `mcp0_list_directory` for directory listing
+- `mcp0_search_files` for file searching
+- `mcp0_move_file` for file operations
+- `mcp0_get_file_info` for file metadata
+
+## Project Context
+- **Type**: Marketing Personnel Management System
+- **Architecture**: .NET 9.0 layered architecture with SPA frontend
+- **Database**: SQL Server with EF Core
+- **Frontend**: Bootstrap 5 + vanilla JavaScript SPA
+- **API**: ASP.NET Core Web API with REST endpoints
+
+## Development Guidelines
+- Follow Sprint-based development approach
+- Implement comprehensive validation (client + server)
+- Use proper error handling and logging
+- Maintain clean separation of concerns across layers
+- Prioritize user experience and responsive design
+
+## Current Status
+- Sprint 1: COMPLETED (Database schema, Personnel CRUD API, SPA grid/modals)
+- Ready for Sprint 2: Sales tracking and commission calculations
