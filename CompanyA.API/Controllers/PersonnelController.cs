@@ -19,9 +19,14 @@ namespace CompanyA.API.Controllers
         }
 
         /// <summary>
-        /// Get all personnel
+        /// Get all personnel records
         /// </summary>
+        /// <returns>List of all personnel with their details</returns>
+        /// <response code="200">Returns the list of personnel</response>
+        /// <response code="500">Internal server error</response>
         [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<PersonnelDto>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<PersonnelDto>>), 500)]
         public async Task<ActionResult<ApiResponse<IEnumerable<PersonnelDto>>>> GetAllPersonnel()
         {
             try
@@ -39,7 +44,15 @@ namespace CompanyA.API.Controllers
         /// <summary>
         /// Get personnel by ID
         /// </summary>
+        /// <param name="id">Personnel ID</param>
+        /// <returns>Personnel details for the specified ID</returns>
+        /// <response code="200">Returns the personnel details</response>
+        /// <response code="404">Personnel not found</response>
+        /// <response code="500">Internal server error</response>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 500)]
         public async Task<ActionResult<ApiResponse<PersonnelDto>>> GetPersonnelById(int id)
         {
             try
@@ -62,7 +75,15 @@ namespace CompanyA.API.Controllers
         /// <summary>
         /// Create new personnel
         /// </summary>
+        /// <param name="personnelDto">Personnel data to create</param>
+        /// <returns>Created personnel details</returns>
+        /// <response code="201">Personnel created successfully</response>
+        /// <response code="400">Validation errors</response>
+        /// <response code="500">Internal server error</response>
         [HttpPost]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 201)]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 400)]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 500)]
         public async Task<ActionResult<ApiResponse<PersonnelDto>>> CreatePersonnel([FromBody] PersonnelDto personnelDto)
         {
             try
@@ -98,7 +119,18 @@ namespace CompanyA.API.Controllers
         /// <summary>
         /// Update existing personnel
         /// </summary>
+        /// <param name="id">Personnel ID to update</param>
+        /// <param name="personnelDto">Updated personnel data</param>
+        /// <returns>Updated personnel details</returns>
+        /// <response code="200">Personnel updated successfully</response>
+        /// <response code="400">Validation errors</response>
+        /// <response code="404">Personnel not found</response>
+        /// <response code="500">Internal server error</response>
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 400)]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<PersonnelDto>), 500)]
         public async Task<ActionResult<ApiResponse<PersonnelDto>>> UpdatePersonnel(int id, [FromBody] PersonnelDto personnelDto)
         {
             try
@@ -137,7 +169,22 @@ namespace CompanyA.API.Controllers
         /// <summary>
         /// Delete personnel (requires confirmation)
         /// </summary>
+        /// <param name="id">Personnel ID to delete</param>
+        /// <param name="confirm">Confirmation flag (must be true)</param>
+        /// <returns>Deletion confirmation</returns>
+        /// <response code="200">Personnel deleted successfully</response>
+        /// <response code="400">Confirmation required or deletion failed</response>
+        /// <response code="404">Personnel not found</response>
+        /// <response code="500">Internal server error</response>
+        /// <remarks>
+        /// Deleting personnel will also delete all associated sales records (cascade delete).
+        /// You must set confirm=true to proceed with deletion.
+        /// </remarks>
         [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
         public async Task<ActionResult<ApiResponse<object>>> DeletePersonnel(int id, [FromQuery] bool confirm = false)
         {
             try

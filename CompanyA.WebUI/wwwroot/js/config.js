@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-    baseUrl: 'https://localhost:7001/api',
+    baseUrl: 'http://localhost:5041/api',
     endpoints: {
         personnel: '/personnel',
         commissionProfiles: '/commissionprofiles',
