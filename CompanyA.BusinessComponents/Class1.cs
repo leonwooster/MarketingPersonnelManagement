@@ -2,6 +2,7 @@ using CompanyA.BusinessEntity;
 using CompanyA.DataAccess;
 using CompanyA.DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace CompanyA.BusinessComponents
 {
