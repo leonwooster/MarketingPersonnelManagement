@@ -13,33 +13,36 @@ class SalesManager {
     }
 
     initializeEventListeners() {
+        var self = this;
+        
         // View toggle buttons
-        document.getElementById('gridViewBtn').addEventListener('click', () => this.switchToGridView());
-        document.getElementById('chartViewBtn').addEventListener('click', () => this.switchToChartView());
+        $('#gridViewBtn').on('click', function() { self.switchToGridView(); });
+        $('#chartViewBtn').on('click', function() { self.switchToChartView(); });
         
         // Load sales button
-        document.getElementById('loadSalesBtn').addEventListener('click', () => this.loadSalesData());
+        $('#loadSalesBtn').on('click', function() { self.loadSalesData(); });
         
         // Personnel selection change
-        document.getElementById('personnelSelect').addEventListener('change', (e) => {
-            this.currentPersonnelId = e.target.value ? parseInt(e.target.value) : null;
-            if (this.currentPersonnelId) {
-                this.loadSalesData();
+        $('#personnelSelect').on('change', function() {
+            var value = $(this).val();
+            self.currentPersonnelId = value ? parseInt(value) : null;
+            if (self.currentPersonnelId) {
+                self.loadSalesData();
             }
         });
 
         // Add sales form
-        document.getElementById('addSalesForm').addEventListener('submit', (e) => this.handleAddSales(e));
+        $('#addSalesForm').on('submit', function(e) { self.handleAddSales(e); });
     }
 
     setDefaultDateRange() {
-        const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        var now = new Date();
+        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         
-        document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
-        document.getElementById('dateTo').value = lastDay.toISOString().split('T')[0];
-        document.getElementById('salesDate').value = now.toISOString().split('T')[0];
+        $('#dateFrom').val(firstDay.toISOString().split('T')[0]);
+        $('#dateTo').val(lastDay.toISOString().split('T')[0]);
+        $('#salesDate').val(now.toISOString().split('T')[0]);
     }
 
     async loadPersonnelData() {
@@ -63,36 +66,36 @@ class SalesManager {
 
     populatePersonnelSelects() {
         console.log('Populating personnel selects...');
-        const personnelSelect = document.getElementById('personnelSelect');
-        const salesPersonnelSelect = document.getElementById('salesPersonnelId');
+        var $personnelSelect = $('#personnelSelect');
+        var $salesPersonnelSelect = $('#salesPersonnelId');
         
-        if (!personnelSelect || !salesPersonnelSelect) {
+        if ($personnelSelect.length === 0 || $salesPersonnelSelect.length === 0) {
             console.error('Personnel select elements not found');
             return;
         }
         
         // Clear existing options
-        personnelSelect.innerHTML = '<option value="">Select Personnel</option>';
-        salesPersonnelSelect.innerHTML = '<option value="">Select Personnel</option>';
+        $personnelSelect.html('<option value="">Select Personnel</option>');
+        $salesPersonnelSelect.html('<option value="">Select Personnel</option>');
         
         // Add personnel options
         if (this.personnelData && this.personnelData.length > 0) {
-            this.personnelData.forEach(person => {
-                const option1 = new Option(`${person.name} (ID: ${person.id})`, person.id);
-                const option2 = new Option(`${person.name} (ID: ${person.id})`, person.id);
-                personnelSelect.appendChild(option1);
-                salesPersonnelSelect.appendChild(option2);
+            var self = this;
+            $.each(this.personnelData, function(index, person) {
+                var optionText = person.name + ' (ID: ' + person.id + ')';
+                $personnelSelect.append($('<option></option>').val(person.id).text(optionText));
+                $salesPersonnelSelect.append($('<option></option>').val(person.id).text(optionText));
             });
-            console.log(`Added ${this.personnelData.length} personnel options`);
+            console.log('Added ' + this.personnelData.length + ' personnel options');
         } else {
             console.warn('No personnel data available to populate');
         }
     }
 
     async loadSalesData() {
-        const personnelId = this.currentPersonnelId;
-        const fromDate = document.getElementById('dateFrom').value;
-        const toDate = document.getElementById('dateTo').value;
+        var personnelId = this.currentPersonnelId;
+        var fromDate = $('#dateFrom').val();
+        var toDate = $('#dateTo').val();
 
         if (!personnelId) {
             this.showError('Please select personnel first');
@@ -102,97 +105,129 @@ class SalesManager {
         this.showLoading(true);
 
         try {
-            const queryParams = new URLSearchParams();
-            queryParams.append('personnelId', personnelId);
-            if (fromDate) queryParams.append('from', fromDate);
-            if (toDate) queryParams.append('to', toDate);
+            var queryParams = [];
+            queryParams.push('personnelId=' + encodeURIComponent(personnelId));
+            if (fromDate) queryParams.push('from=' + encodeURIComponent(fromDate));
+            if (toDate) queryParams.push('to=' + encodeURIComponent(toDate));
 
-            const response = await fetch(`${API_CONFIG.baseUrl}/sales?${queryParams}`);
-            const result = await response.json();
-
-            if (result.success) {
-                this.currentSalesData = result.data;
-                await this.updateSalesDisplay();
-            } else {
-                this.showError('Failed to load sales data: ' + result.message);
-            }
+            var url = API_CONFIG.baseUrl + '/sales?' + queryParams.join('&');
+            
+            var self = this;
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function(result) {
+                    if (result.success) {
+                        self.currentSalesData = result.data;
+                        self.updateSalesDisplay();
+                    } else {
+                        self.showError('Failed to load sales data: ' + result.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    self.showError('Error loading sales: ' + error);
+                },
+                complete: function() {
+                    self.showLoading(false);
+                }
+            });
         } catch (error) {
             this.showError('Error loading sales: ' + error.message);
-        } finally {
             this.showLoading(false);
         }
     }
 
-    async updateSalesDisplay() {
-        document.getElementById('salesCount').textContent = `${this.currentSalesData.length} records`;
+    updateSalesDisplay() {
+        $('#salesCount').text(this.currentSalesData.length + ' records');
         
         if (this.currentView === 'grid') {
             this.renderSalesGrid();
         } else {
-            await this.renderSalesChart();
+            this.renderSalesChart();
         }
     }
 
     renderSalesGrid() {
-        const tbody = document.getElementById('salesTableBody');
+        var $tbody = $('#salesTableBody');
         
         if (this.currentSalesData.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center text-muted">
-                        <i class="bi bi-info-circle"></i> No sales records found for the selected criteria
-                    </td>
-                </tr>
-            `;
+            $tbody.html(
+                '<tr>' +
+                    '<td colspan="5" class="text-center text-muted">' +
+                        '<i class="bi bi-info-circle"></i> No sales records found for the selected criteria' +
+                    '</td>' +
+                '</tr>'
+            );
             return;
         }
 
-        tbody.innerHTML = this.currentSalesData.map(sale => {
-            const personnel = this.personnelData.find(p => p.id === sale.personnelId);
-            const personnelName = personnel ? personnel.name : `ID: ${sale.personnelId}`;
-            const formattedDate = new Date(sale.reportDate).toLocaleDateString();
-            const formattedAmount = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(sale.salesAmount);
+        var html = '';
+        var self = this;
+        $.each(this.currentSalesData, function(index, sale) {
+            var personnel = null;
+            $.each(self.personnelData, function(i, p) {
+                if (p.id === sale.personnelId) {
+                    personnel = p;
+                    return false; // break
+                }
+            });
+            
+            var personnelName = personnel ? personnel.name : 'ID: ' + sale.personnelId;
+            var formattedDate = new Date(sale.reportDate).toLocaleDateString();
+            var formattedAmount = '$' + parseFloat(sale.salesAmount).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
 
-            return `
-                <tr>
-                    <td>${sale.id}</td>
-                    <td>${personnelName}</td>
-                    <td>${formattedDate}</td>
-                    <td>${formattedAmount}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="salesManager.deleteSales(${sale.id})">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+            html += '<tr>' +
+                '<td>' + sale.id + '</td>' +
+                '<td>' + personnelName + '</td>' +
+                '<td>' + formattedDate + '</td>' +
+                '<td>' + formattedAmount + '</td>' +
+                '<td>' +
+                    '<button class="btn btn-sm btn-outline-danger" onclick="salesManager.deleteSales(' + sale.id + ')">' +
+                        '<i class="bi bi-trash"></i> Delete' +
+                    '</button>' +
+                '</td>' +
+            '</tr>';
+        });
+        
+        $tbody.html(html);
     }
 
-    async renderSalesChart() {
-        // Debug what's actually available
-        console.log('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('chart')));
-        console.log('Chart object:', typeof Chart);
-        console.log('window.Chart:', typeof window.Chart);
+    renderSalesChart() {
+        var self = this;
         
-        // Wait for Chart.js to be available with timeout
-        let attempts = 0;
-        while (typeof Chart === 'undefined' && typeof window.Chart === 'undefined' && attempts < 50) {
-            console.log('Waiting for Chart.js...', attempts);
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
+        // Check for Chart.js with timeout
+        var checkChart = function(attempts) {
+            if (typeof Chart !== 'undefined' || typeof window.Chart !== 'undefined') {
+                self.createChart();
+            } else if (attempts < 50) {
+                setTimeout(function() {
+                    checkChart(attempts + 1);
+                }, 100);
+            } else {
+                self.showError('Chart.js failed to load after 5 seconds');
+            }
+        };
         
-        const ChartConstructor = Chart || window.Chart;
+        checkChart(0);
+    }
+    
+    createChart() {
+        var ChartConstructor = Chart || window.Chart;
         if (!ChartConstructor) {
-            this.showError('Chart.js failed to load after 5 seconds');
+            this.showError('Chart.js is not available');
             return;
         }
 
-        const ctx = document.getElementById('salesChart').getContext('2d');
+        var canvas = document.getElementById('salesChart');
+        if (!canvas) {
+            this.showError('Chart canvas not found');
+            return;
+        }
+        
+        var ctx = canvas.getContext('2d');
         
         // Destroy existing chart
         if (this.salesChart) {
@@ -200,14 +235,17 @@ class SalesManager {
         }
 
         // Group sales by date
-        const salesByDate = {};
-        this.currentSalesData.forEach(sale => {
-            const date = new Date(sale.reportDate).toLocaleDateString();
+        var salesByDate = {};
+        $.each(this.currentSalesData, function(index, sale) {
+            var date = new Date(sale.reportDate).toLocaleDateString();
             salesByDate[date] = (salesByDate[date] || 0) + sale.salesAmount;
         });
 
-        const dates = Object.keys(salesByDate).sort();
-        const amounts = dates.map(date => salesByDate[date]);
+        var dates = Object.keys(salesByDate).sort();
+        var amounts = [];
+        $.each(dates, function(index, date) {
+            amounts.push(salesByDate[date]);
+        });
 
         this.salesChart = new ChartConstructor(ctx, {
             type: 'bar',
@@ -229,10 +267,10 @@ class SalesManager {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return new Intl.NumberFormat('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD'
-                                }).format(value);
+                                return '$' + parseFloat(value).toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
                             }
                         }
                     }
@@ -241,10 +279,10 @@ class SalesManager {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return 'Sales: ' + new Intl.NumberFormat('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD'
-                                }).format(context.parsed.y);
+                                return 'Sales: $' + parseFloat(context.parsed.y).toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
                             }
                         }
                     }
@@ -255,10 +293,10 @@ class SalesManager {
 
     switchToGridView() {
         this.currentView = 'grid';
-        document.getElementById('gridViewBtn').classList.add('active');
-        document.getElementById('chartViewBtn').classList.remove('active');
-        document.getElementById('gridView').style.display = 'block';
-        document.getElementById('chartView').style.display = 'none';
+        $('#gridViewBtn').addClass('active');
+        $('#chartViewBtn').removeClass('active');
+        $('#gridView').show();
+        $('#chartView').hide();
         
         if (this.currentSalesData.length > 0) {
             this.renderSalesGrid();
@@ -266,23 +304,26 @@ class SalesManager {
     }
 
     switchToChartView() {
+        var self = this;
         this.currentView = 'chart';
-        document.getElementById('chartViewBtn').classList.add('active');
-        document.getElementById('gridViewBtn').classList.remove('active');
-        document.getElementById('gridView').style.display = 'none';
-        document.getElementById('chartView').style.display = 'block';
+        $('#chartViewBtn').addClass('active');
+        $('#gridViewBtn').removeClass('active');
+        $('#gridView').hide();
+        $('#chartView').show();
         
         if (this.currentSalesData.length > 0) {
-            setTimeout(async () => await this.renderSalesChart(), 100); // Allow DOM to update
+            setTimeout(function() {
+                self.renderSalesChart();
+            }, 100); // Allow DOM to update
         }
     }
 
-    async handleAddSales(event) {
+    handleAddSales(event) {
         event.preventDefault();
         
-        const personnelId = parseInt(document.getElementById('salesPersonnelId').value);
-        const salesDate = document.getElementById('salesDate').value;
-        const salesAmount = parseFloat(document.getElementById('salesAmount').value);
+        var personnelId = parseInt($('#salesPersonnelId').val());
+        var salesDate = $('#salesDate').val();
+        var salesAmount = parseFloat($('#salesAmount').val());
 
         if (!personnelId || !salesDate || salesAmount < 0) {
             this.showError('Please fill in all required fields with valid values');
@@ -290,8 +331,8 @@ class SalesManager {
         }
 
         // Check if date is in the future
-        const selectedDate = new Date(salesDate);
-        const today = new Date();
+        var selectedDate = new Date(salesDate);
+        var today = new Date();
         today.setHours(0, 0, 0, 0);
         
         if (selectedDate > today) {
@@ -299,114 +340,114 @@ class SalesManager {
             return;
         }
 
-        try {
-            const salesData = {
-                personnelId: personnelId,
-                reportDate: salesDate,
-                salesAmount: salesAmount
-            };
+        var salesData = {
+            personnelId: personnelId,
+            reportDate: salesDate,
+            salesAmount: salesAmount
+        };
 
-            const response = await fetch(`${API_CONFIG.baseUrl}/sales`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(salesData)
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                this.showSuccess('Sales record added successfully');
-                document.getElementById('addSalesForm').reset();
-                document.getElementById('salesDate').value = new Date().toISOString().split('T')[0];
-                
-                // Reload sales data if current personnel matches
-                if (this.currentPersonnelId === personnelId) {
-                    await this.loadSalesData();
+        var self = this;
+        $.ajax({
+            url: API_CONFIG.baseUrl + '/sales',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(salesData),
+            success: function(result) {
+                if (result.success) {
+                    self.showSuccess('Sales record added successfully');
+                    $('#addSalesForm')[0].reset();
+                    $('#salesDate').val(new Date().toISOString().split('T')[0]);
+                    
+                    // Reload sales data if current personnel matches
+                    if (self.currentPersonnelId === personnelId) {
+                        self.loadSalesData();
+                    }
+                } else {
+                    self.showError('Failed to add sales record: ' + (result.message || 'Unknown error'));
+                    if (result.errors && result.errors.length > 0) {
+                        $.each(result.errors, function(index, error) {
+                            self.showError(error);
+                        });
+                    }
                 }
-            } else {
-                this.showError('Failed to add sales record: ' + (result.message || 'Unknown error'));
-                if (result.errors && result.errors.length > 0) {
-                    result.errors.forEach(error => this.showError(error));
-                }
+            },
+            error: function(xhr, status, error) {
+                self.showError('Error adding sales record: ' + error);
             }
-        } catch (error) {
-            this.showError('Error adding sales record: ' + error.message);
-        }
+        });
     }
 
-    async deleteSales(salesId) {
+    deleteSales(salesId) {
         if (!confirm('Are you sure you want to delete this sales record?')) {
             return;
         }
 
-        try {
-            const response = await fetch(`${API_CONFIG.baseUrl}/sales/${salesId}`, {
-                method: 'DELETE'
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                this.showSuccess('Sales record deleted successfully');
-                await this.loadSalesData(); // Refresh the data
-            } else {
-                this.showError('Failed to delete sales record: ' + result.message);
+        var self = this;
+        $.ajax({
+            url: API_CONFIG.baseUrl + '/sales/' + salesId,
+            method: 'DELETE',
+            success: function(result) {
+                if (result.success) {
+                    self.showSuccess('Sales record deleted successfully');
+                    self.loadSalesData(); // Refresh the data
+                } else {
+                    self.showError('Failed to delete sales record: ' + result.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                self.showError('Error deleting sales record: ' + error);
             }
-        } catch (error) {
-            this.showError('Error deleting sales record: ' + error.message);
-        }
+        });
     }
 
     showLoading(show) {
-        document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        if (show) {
+            $('#loadingIndicator').show();
+        } else {
+            $('#loadingIndicator').hide();
+        }
     }
 
     showError(message) {
         // Create and show error alert
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <i class="bi bi-exclamation-triangle"></i> ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+        var alertHtml = '<div class="alert alert-danger alert-dismissible fade show">' +
+            '<i class="bi bi-exclamation-triangle"></i> ' + message +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+        '</div>';
         
-        const container = document.querySelector('.container-fluid');
-        container.insertBefore(alertDiv, container.firstChild);
+        var $alert = $(alertHtml);
+        $('.container-fluid').prepend($alert);
         
         // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
+        setTimeout(function() {
+            $alert.fadeOut(function() {
+                $alert.remove();
+            });
         }, 5000);
     }
 
     showSuccess(message) {
         // Create and show success alert
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <i class="bi bi-check-circle"></i> ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+        var alertHtml = '<div class="alert alert-success alert-dismissible fade show">' +
+            '<i class="bi bi-check-circle"></i> ' + message +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+        '</div>';
         
-        const container = document.querySelector('.container-fluid');
-        container.insertBefore(alertDiv, container.firstChild);
+        var $alert = $(alertHtml);
+        $('.container-fluid').prepend($alert);
         
         // Auto-dismiss after 3 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
+        setTimeout(function() {
+            $alert.fadeOut(function() {
+                $alert.remove();
+            });
         }, 3000);
     }
 }
 
 // Initialize the sales manager when the page loads
-let salesManager;
-document.addEventListener('DOMContentLoaded', function() {
+var salesManager;
+$(document).ready(function() {
     // Initialize immediately - Chart.js will be checked when needed
     salesManager = new SalesManager();
 });
