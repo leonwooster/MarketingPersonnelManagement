@@ -44,33 +44,49 @@ class SalesManager {
 
     async loadPersonnelData() {
         try {
-            const response = await ApiClient.getAllPersonnel();
+            console.log('Loading personnel data...');
+            const response = await apiClient.getAllPersonnel();
+            console.log('Personnel API response:', response);
+            
             if (response.success) {
                 this.personnelData = response.data;
+                console.log('Personnel data loaded:', this.personnelData);
                 this.populatePersonnelSelects();
             } else {
                 this.showError('Failed to load personnel data: ' + response.message);
             }
         } catch (error) {
+            console.error('Error loading personnel:', error);
             this.showError('Error loading personnel: ' + error.message);
         }
     }
 
     populatePersonnelSelects() {
+        console.log('Populating personnel selects...');
         const personnelSelect = document.getElementById('personnelSelect');
         const salesPersonnelSelect = document.getElementById('salesPersonnelId');
+        
+        if (!personnelSelect || !salesPersonnelSelect) {
+            console.error('Personnel select elements not found');
+            return;
+        }
         
         // Clear existing options
         personnelSelect.innerHTML = '<option value="">Select Personnel</option>';
         salesPersonnelSelect.innerHTML = '<option value="">Select Personnel</option>';
         
         // Add personnel options
-        this.personnelData.forEach(person => {
-            const option1 = new Option(`${person.name} (ID: ${person.id})`, person.id);
-            const option2 = new Option(`${person.name} (ID: ${person.id})`, person.id);
-            personnelSelect.appendChild(option1);
-            salesPersonnelSelect.appendChild(option2);
-        });
+        if (this.personnelData && this.personnelData.length > 0) {
+            this.personnelData.forEach(person => {
+                const option1 = new Option(`${person.name} (ID: ${person.id})`, person.id);
+                const option2 = new Option(`${person.name} (ID: ${person.id})`, person.id);
+                personnelSelect.appendChild(option1);
+                salesPersonnelSelect.appendChild(option2);
+            });
+            console.log(`Added ${this.personnelData.length} personnel options`);
+        } else {
+            console.warn('No personnel data available to populate');
+        }
     }
 
     async loadSalesData() {
@@ -96,7 +112,7 @@ class SalesManager {
 
             if (result.success) {
                 this.currentSalesData = result.data;
-                this.updateSalesDisplay();
+                await this.updateSalesDisplay();
             } else {
                 this.showError('Failed to load sales data: ' + result.message);
             }
@@ -107,13 +123,13 @@ class SalesManager {
         }
     }
 
-    updateSalesDisplay() {
+    async updateSalesDisplay() {
         document.getElementById('salesCount').textContent = `${this.currentSalesData.length} records`;
         
         if (this.currentView === 'grid') {
             this.renderSalesGrid();
         } else {
-            this.renderSalesChart();
+            await this.renderSalesChart();
         }
     }
 
@@ -156,7 +172,26 @@ class SalesManager {
         }).join('');
     }
 
-    renderSalesChart() {
+    async renderSalesChart() {
+        // Debug what's actually available
+        console.log('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('chart')));
+        console.log('Chart object:', typeof Chart);
+        console.log('window.Chart:', typeof window.Chart);
+        
+        // Wait for Chart.js to be available with timeout
+        let attempts = 0;
+        while (typeof Chart === 'undefined' && typeof window.Chart === 'undefined' && attempts < 50) {
+            console.log('Waiting for Chart.js...', attempts);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        const ChartConstructor = Chart || window.Chart;
+        if (!ChartConstructor) {
+            this.showError('Chart.js failed to load after 5 seconds');
+            return;
+        }
+
         const ctx = document.getElementById('salesChart').getContext('2d');
         
         // Destroy existing chart
@@ -174,7 +209,7 @@ class SalesManager {
         const dates = Object.keys(salesByDate).sort();
         const amounts = dates.map(date => salesByDate[date]);
 
-        this.salesChart = new Chart(ctx, {
+        this.salesChart = new ChartConstructor(ctx, {
             type: 'bar',
             data: {
                 labels: dates,
@@ -238,7 +273,7 @@ class SalesManager {
         document.getElementById('chartView').style.display = 'block';
         
         if (this.currentSalesData.length > 0) {
-            setTimeout(() => this.renderSalesChart(), 100); // Allow DOM to update
+            setTimeout(async () => await this.renderSalesChart(), 100); // Allow DOM to update
         }
     }
 
@@ -372,5 +407,6 @@ class SalesManager {
 // Initialize the sales manager when the page loads
 let salesManager;
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize immediately - Chart.js will be checked when needed
     salesManager = new SalesManager();
 });
