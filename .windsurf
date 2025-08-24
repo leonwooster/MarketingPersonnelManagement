@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "settings": {
+    "exclude": [
+      "**/bin/**",
+      "**/obj/**",
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/packages/**"
+    ],
+    "watcher": {
+      "include": [
+        "**/*.cs",
+        "**/*.csproj",
+        "**/*.sln"
+      ],
+      "exclude": [
+        "**/bin/**",
+        "**/obj/**"
+      ]
+    },
+    "formatting": {
+      "indentSize": 2,
+      "useTabs": false,
+      "insertFinalNewline": true,
+      "trimTrailingWhitespace": true
+    },
+    "linting": {
+      "enabled": true,
+      "rules": {
+        "unused-imports": "warn",
+        "unused-vars": "warn"
+      }
+    },
+    "features": {
+      "autoSave": "afterDelay",
+      "autoSaveDelay": 1000,
+      "autoFormatOnSave": true
+    }
+  }
+}
