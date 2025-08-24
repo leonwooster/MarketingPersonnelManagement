@@ -32,10 +32,13 @@ namespace CompanyA.DataAccess
                       .HasForeignKey(p => p.CommissionProfileId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                // Check constraints (handled by database)
-                entity.HasCheckConstraint("CK_Personnel_Age", "age >= 19");
-                entity.HasCheckConstraint("CK_Personnel_Name", "LEN(LTRIM(RTRIM(name))) > 0");
-                entity.HasCheckConstraint("CK_Personnel_Phone", "LEN(LTRIM(RTRIM(phone))) > 0");
+                // Check constraints (using modern syntax)
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_Personnel_Age", "age >= 19");
+                    t.HasCheckConstraint("CK_Personnel_Name", "LEN(LTRIM(RTRIM(name))) > 0");
+                    t.HasCheckConstraint("CK_Personnel_Phone", "LEN(LTRIM(RTRIM(phone))) > 0");
+                });
             });
 
             // Configure CommissionProfile entity
@@ -45,9 +48,12 @@ namespace CompanyA.DataAccess
                 entity.Property(e => e.CommissionFixed).HasColumnType("decimal(10,2)");
                 entity.Property(e => e.CommissionPercentage).HasColumnType("decimal(10,6)");
                 
-                // Check constraints
-                entity.HasCheckConstraint("CK_CommissionProfile_Fixed", "commission_fixed >= 0");
-                entity.HasCheckConstraint("CK_CommissionProfile_Percentage", "commission_percentage >= 0 AND commission_percentage <= 1");
+                // Check constraints (using modern syntax)
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_CommissionProfile_Fixed", "commission_fixed >= 0");
+                    t.HasCheckConstraint("CK_CommissionProfile_Percentage", "commission_percentage >= 0 AND commission_percentage <= 1");
+                });
             });
 
             // Configure Sales entity
@@ -62,9 +68,12 @@ namespace CompanyA.DataAccess
                       .HasForeignKey(s => s.PersonnelId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Check constraints
-                entity.HasCheckConstraint("CK_Sales_Amount", "sales_amount >= 0");
-                entity.HasCheckConstraint("CK_Sales_Date", "report_date <= GETDATE()");
+                // Check constraints (using modern syntax)
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_Sales_Amount", "sales_amount >= 0");
+                    t.HasCheckConstraint("CK_Sales_Date", "report_date <= GETDATE()");
+                });
 
                 // Indexes
                 entity.HasIndex(e => e.PersonnelId).HasDatabaseName("IX_Sales_PersonnelId");
