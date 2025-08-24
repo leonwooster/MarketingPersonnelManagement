@@ -108,10 +108,90 @@ The system follows a layered architecture with REST microservices:
 
 ## Getting Started
 
-1. **Database Setup**: Run SQL scripts from `SQL/` folder
-2. **Configuration**: Update connection strings in `appsettings.json`
-3. **Build**: `dotnet build CompanyA.WebUI/CompanyA.WebUI.sln`
-4. **Deploy**: Use artifacts from `Deploy/` folder for IIS deployment
+### Prerequisites
+- .NET 9.0 SDK
+- SQL Server (LocalDB or full instance)
+- Visual Studio or VS Code
+
+### Database Setup
+
+#### Option 1: EF Core Migrations (Recommended)
+1. **Update Connection String**: Edit `CompanyA.API/appsettings.Development.json`
+   ```json
+   {
+     "ConnectionStrings": {
+       "DefaultConnection": "Server=localhost;Database=Marketing;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;MultipleActiveResultSets=True"
+     }
+   }
+   ```
+
+2. **Create Database Tables**: Run from solution root directory
+   ```bash
+   dotnet ef migrations add InitialCreate --project CompanyA.DataAccess --startup-project CompanyA.API
+   dotnet ef database update --project CompanyA.DataAccess --startup-project CompanyA.API
+   ```
+
+3. **Seed Test Data**: Create and apply seed data migration
+   ```bash
+   dotnet ef migrations add SeedData --project CompanyA.DataAccess --startup-project CompanyA.API
+   dotnet ef database update --project CompanyA.DataAccess --startup-project CompanyA.API
+   ```
+
+#### Option 2: SQL Scripts
+1. **Create Database**:
+   ```sql
+   CREATE DATABASE Marketing;
+   ```
+
+2. **Run Scripts**:
+   ```bash
+   sqlcmd -S localhost -d Marketing -U sa -P YOUR_PASSWORD -i SQL\create_tables.sql
+   sqlcmd -S localhost -d Marketing -U sa -P YOUR_PASSWORD -i SQL\seed_data.sql
+   ```
+
+### Application Setup
+1. **Build Solution**:
+   ```bash
+   dotnet build CompanyA.WebUI/CompanyA.WebUI.sln
+   ```
+
+2. **Run API**:
+   ```bash
+   dotnet run --project CompanyA.API
+   ```
+
+3. **Run WebUI**:
+   ```bash
+   dotnet run --project CompanyA.WebUI
+   ```
+
+### EF Core Management Commands
+
+#### View Migrations
+```bash
+dotnet ef migrations list --project CompanyA.DataAccess --startup-project CompanyA.API
+```
+
+#### Add New Migration
+```bash
+dotnet ef migrations add [MigrationName] --project CompanyA.DataAccess --startup-project CompanyA.API
+```
+
+#### Remove Last Migration
+```bash
+dotnet ef migrations remove --project CompanyA.DataAccess --startup-project CompanyA.API
+```
+
+#### Generate SQL Script
+```bash
+dotnet ef migrations script --project CompanyA.DataAccess --startup-project CompanyA.API
+```
+
+#### Reset Database
+```bash
+dotnet ef database drop --project CompanyA.DataAccess --startup-project CompanyA.API
+dotnet ef database update --project CompanyA.DataAccess --startup-project CompanyA.API
+```
 
 ## Browser Support
 
