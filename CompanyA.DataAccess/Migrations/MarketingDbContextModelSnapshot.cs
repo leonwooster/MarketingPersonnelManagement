@@ -220,35 +220,35 @@ namespace CompanyA.DataAccess.Migrations
                         {
                             Id = 1,
                             PersonnelId = 1,
-                            ReportDate = new DateTime(2025, 6, 30, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177),
+                            ReportDate = new DateTime(2024, 7, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             SalesAmount = 1250.00m
                         },
                         new
                         {
                             Id = 2,
                             PersonnelId = 1,
-                            ReportDate = new DateTime(2025, 7, 5, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177),
+                            ReportDate = new DateTime(2024, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             SalesAmount = 980.50m
                         },
                         new
                         {
                             Id = 3,
                             PersonnelId = 2,
-                            ReportDate = new DateTime(2025, 7, 3, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177),
+                            ReportDate = new DateTime(2024, 7, 18, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             SalesAmount = 2150.00m
                         },
                         new
                         {
                             Id = 4,
                             PersonnelId = 2,
-                            ReportDate = new DateTime(2025, 7, 7, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177),
+                            ReportDate = new DateTime(2024, 7, 22, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             SalesAmount = 1875.50m
                         },
                         new
                         {
                             Id = 5,
                             PersonnelId = 3,
-                            ReportDate = new DateTime(2025, 7, 10, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177),
+                            ReportDate = new DateTime(2024, 7, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             SalesAmount = 950.00m
                         });
                 });

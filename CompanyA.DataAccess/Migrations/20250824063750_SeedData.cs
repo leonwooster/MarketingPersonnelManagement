@@ -107,11 +107,11 @@ namespace CompanyA.DataAccess.Migrations
                 columns: new[] { "Id", "personnel_id", "report_date", "sales_amount" },
                 values: new object[,]
                 {
-                    { 1, 1, new DateTime(2025, 6, 30, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177), 1250.00m },
-                    { 2, 1, new DateTime(2025, 7, 5, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177), 980.50m },
-                    { 3, 2, new DateTime(2025, 7, 3, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177), 2150.00m },
-                    { 4, 2, new DateTime(2025, 7, 7, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177), 1875.50m },
-                    { 5, 3, new DateTime(2025, 7, 10, 14, 32, 31, 976, DateTimeKind.Local).AddTicks(9177), 950.00m }
+                    { 1, 1, new DateTime(2024, 7, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), 1250.00m },
+                    { 2, 1, new DateTime(2024, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), 980.50m },
+                    { 3, 2, new DateTime(2024, 7, 18, 0, 0, 0, 0, DateTimeKind.Unspecified), 2150.00m },
+                    { 4, 2, new DateTime(2024, 7, 22, 0, 0, 0, 0, DateTimeKind.Unspecified), 1875.50m },
+                    { 5, 3, new DateTime(2024, 7, 25, 0, 0, 0, 0, DateTimeKind.Unspecified), 950.00m }
                 });
 
             migrationBuilder.CreateIndex(

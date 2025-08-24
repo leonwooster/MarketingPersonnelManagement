@@ -107,14 +107,13 @@ namespace CompanyA.DataAccess
                 new Personnel { Id = 5, Name = "David Wilson", Age = 29, Phone = "555-0105", CommissionProfileId = 2, BankName = "TD Bank", BankAccountNo = "5678901234" }
             );
 
-            // Seed Sales (sample data)
-            var baseDate = DateTime.Now.AddDays(-30);
+            // Seed Sales (sample data with static dates)
             modelBuilder.Entity<Sales>().HasData(
-                new Sales { Id = 1, PersonnelId = 1, ReportDate = baseDate.AddDays(-25), SalesAmount = 1250.00m },
-                new Sales { Id = 2, PersonnelId = 1, ReportDate = baseDate.AddDays(-20), SalesAmount = 980.50m },
-                new Sales { Id = 3, PersonnelId = 2, ReportDate = baseDate.AddDays(-22), SalesAmount = 2150.00m },
-                new Sales { Id = 4, PersonnelId = 2, ReportDate = baseDate.AddDays(-18), SalesAmount = 1875.50m },
-                new Sales { Id = 5, PersonnelId = 3, ReportDate = baseDate.AddDays(-15), SalesAmount = 950.00m }
+                new Sales { Id = 1, PersonnelId = 1, ReportDate = new DateTime(2024, 7, 15), SalesAmount = 1250.00m },
+                new Sales { Id = 2, PersonnelId = 1, ReportDate = new DateTime(2024, 7, 20), SalesAmount = 980.50m },
+                new Sales { Id = 3, PersonnelId = 2, ReportDate = new DateTime(2024, 7, 18), SalesAmount = 2150.00m },
+                new Sales { Id = 4, PersonnelId = 2, ReportDate = new DateTime(2024, 7, 22), SalesAmount = 1875.50m },
+                new Sales { Id = 5, PersonnelId = 3, ReportDate = new DateTime(2024, 7, 25), SalesAmount = 950.00m }
             );
         }
     }
