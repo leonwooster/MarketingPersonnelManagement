@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CompanyA.BusinessComponents\CompanyA.BusinessComponents.csproj" />
+    <ProjectReference Include="..\CompanyA.BusinessEntity\CompanyA.BusinessEntity.csproj" />
+    <ProjectReference Include="..\CompanyA.DataAccess\CompanyA.DataAccess.csproj" />
   </ItemGroup>
 
 </Project>
