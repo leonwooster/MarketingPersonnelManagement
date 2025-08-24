@@ -10,6 +10,7 @@ namespace CompanyA.BusinessEntity
         public int PersonnelId { get; set; }
 
         [Required(ErrorMessage = "Report date is required")]
+        [DataType(DataType.Date)]
         public DateTime ReportDate { get; set; }
 
         [Required(ErrorMessage = "Sales amount is required")]

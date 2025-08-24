@@ -18,6 +18,8 @@ builder.Services.AddDbContext<MarketingDbContext>(options =>
 
 // Register business services
 builder.Services.AddScoped<IPersonnelService, PersonnelService>();
+builder.Services.AddScoped<ISalesService, SalesService>();
+builder.Services.AddScoped<ICommissionProfileService, CommissionProfileService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
