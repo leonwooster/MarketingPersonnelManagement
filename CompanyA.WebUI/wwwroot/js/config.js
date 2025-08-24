@@ -1,5 +1,5 @@
 // API Configuration
-const API_CONFIG = {
+var API_CONFIG = {
     baseUrl: 'http://localhost:5041/api',
     endpoints: {
         personnel: '/personnel',
@@ -10,7 +10,7 @@ const API_CONFIG = {
 };
 
 // UI Configuration
-const UI_CONFIG = {
+var UI_CONFIG = {
     pagination: {
         itemsPerPage: 10
     },

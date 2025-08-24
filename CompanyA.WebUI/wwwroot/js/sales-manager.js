@@ -45,23 +45,24 @@ class SalesManager {
         $('#salesDate').val(now.toISOString().split('T')[0]);
     }
 
-    async loadPersonnelData() {
-        try {
-            console.log('Loading personnel data...');
-            const response = await apiClient.getAllPersonnel();
+    loadPersonnelData() {
+        var self = this;
+        console.log('Loading personnel data...');
+        
+        apiClient.getAllPersonnel(function(error, response) {
             console.log('Personnel API response:', response);
             
-            if (response.success) {
-                this.personnelData = response.data;
-                console.log('Personnel data loaded:', this.personnelData);
-                this.populatePersonnelSelects();
+            if (error) {
+                console.error('Error loading personnel:', error);
+                self.showError('Error loading personnel: ' + error.message);
+            } else if (response.success) {
+                self.personnelData = response.data;
+                console.log('Personnel data loaded:', self.personnelData);
+                self.populatePersonnelSelects();
             } else {
-                this.showError('Failed to load personnel data: ' + response.message);
+                self.showError('Failed to load personnel data: ' + response.message);
             }
-        } catch (error) {
-            console.error('Error loading personnel:', error);
-            this.showError('Error loading personnel: ' + error.message);
-        }
+        });
     }
 
     populatePersonnelSelects() {

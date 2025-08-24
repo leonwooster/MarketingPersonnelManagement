@@ -1,68 +1,71 @@
 // API Client for Marketing Personnel Management
-class ApiClient {
-    constructor() {
-        this.baseUrl = API_CONFIG.baseUrl;
-    }
-
-    async request(endpoint, options = {}) {
-        const url = `${this.baseUrl}${endpoint}`;
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            ...options
-        };
-
-        try {
-            const response = await fetch(url, config);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP error! status: ${response.status}`);
-            }
-
-            return data;
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
-    }
-
-    // Personnel API methods
-    async getAllPersonnel() {
-        return await this.request(API_CONFIG.endpoints.personnel);
-    }
-
-    async getPersonnelById(id) {
-        return await this.request(`${API_CONFIG.endpoints.personnel}/${id}`);
-    }
-
-    async createPersonnel(personnelData) {
-        return await this.request(API_CONFIG.endpoints.personnel, {
-            method: 'POST',
-            body: JSON.stringify(personnelData)
-        });
-    }
-
-    async updatePersonnel(id, personnelData) {
-        return await this.request(`${API_CONFIG.endpoints.personnel}/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(personnelData)
-        });
-    }
-
-    async deletePersonnel(id, confirm = true) {
-        return await this.request(`${API_CONFIG.endpoints.personnel}/${id}?confirm=${confirm}`, {
-            method: 'DELETE'
-        });
-    }
-
-    // Commission Profiles API methods
-    async getAllCommissionProfiles() {
-        return await this.request(API_CONFIG.endpoints.commissionProfiles);
-    }
+function ApiClient() {
+    this.baseUrl = API_CONFIG.baseUrl;
 }
 
+ApiClient.prototype.request = function(endpoint, options, callback) {
+    var url = this.baseUrl + endpoint;
+    var config = {
+        url: url,
+        method: options.method || 'GET',
+        contentType: 'application/json',
+        success: function(data) {
+            callback(null, data);
+        },
+        error: function(xhr, status, error) {
+            var errorMessage = 'HTTP error! status: ' + xhr.status;
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            console.error('API request failed:', errorMessage);
+            callback(new Error(errorMessage));
+        }
+    };
+
+    if (options.data) {
+        config.data = JSON.stringify(options.data);
+    }
+
+    $.ajax(config);
+};
+
+// Personnel API methods
+ApiClient.prototype.getAllPersonnel = function(callback) {
+    this.request(API_CONFIG.endpoints.personnel, {}, callback);
+};
+
+ApiClient.prototype.getPersonnelById = function(id, callback) {
+    this.request(API_CONFIG.endpoints.personnel + '/' + id, {}, callback);
+};
+
+ApiClient.prototype.createPersonnel = function(personnelData, callback) {
+    this.request(API_CONFIG.endpoints.personnel, {
+        method: 'POST',
+        data: personnelData
+    }, callback);
+};
+
+ApiClient.prototype.updatePersonnel = function(id, personnelData, callback) {
+    this.request(API_CONFIG.endpoints.personnel + '/' + id, {
+        method: 'PUT',
+        data: personnelData
+    }, callback);
+};
+
+ApiClient.prototype.deletePersonnel = function(id, confirm, callback) {
+    if (typeof confirm === 'function') {
+        callback = confirm;
+        confirm = true;
+    }
+    this.request(API_CONFIG.endpoints.personnel + '/' + id + '?confirm=' + confirm, {
+        method: 'DELETE'
+    }, callback);
+};
+
+// Commission Profiles API methods
+ApiClient.prototype.getAllCommissionProfiles = function(callback) {
+    this.request(API_CONFIG.endpoints.commissionProfiles, {}, callback);
+};
+
 // Global API client instance
-const apiClient = new ApiClient();
+var apiClient = new ApiClient();
