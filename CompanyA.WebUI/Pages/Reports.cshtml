@@ -1,0 +1,302 @@
+@page
+@model CompanyA.WebUI.Pages.ReportsModel
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-bar-chart-line"></i> Reports</h2>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="managementReportBtn">
+                        <i class="bi bi-clipboard-data"></i> Management Overview
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="commissionReportBtn">
+                        <i class="bi bi-currency-dollar"></i> Commission Payout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Report Filters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="reportYear" class="form-label">Year:</label>
+                            <select class="form-select" id="reportYear">
+                                <!-- Will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="reportMonth" class="form-label">Month:</label>
+                            <select class="form-select" id="reportMonth">
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="reportPersonnel" class="form-label">Personnel (Optional):</label>
+                            <select class="form-select" id="reportPersonnel">
+                                <option value="">All Personnel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" id="generateReportBtn">
+                                <i class="bi bi-play-fill"></i> Generate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Overview Report -->
+    <div id="managementReport" class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Management Overview</h5>
+                    <div>
+                        <button class="btn btn-outline-success btn-sm" id="downloadManagementCsv">
+                            <i class="bi bi-download"></i> Download CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Summary Cards -->
+                    <div class="row mb-4" id="managementSummary">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Total Sales</h6>
+                                            <h4 id="totalSales">$0.00</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-currency-dollar fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Transactions</h6>
+                                            <h4 id="totalTransactions">0</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-receipt fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Avg/Person</h6>
+                                            <h4 id="averagePerPerson">$0.00</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-person-check fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">No Sales Days</h6>
+                                            <h4 id="noSalesDays">0</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-calendar-x fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Performers -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="bi bi-trophy"></i> Top Performers</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Personnel</th>
+                                            <th>Total Sales</th>
+                                            <th>Transactions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topPerformersTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">
+                                                <i class="bi bi-info-circle"></i> Generate report to view top performers
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commission Payout Report -->
+    <div id="commissionReport" class="row" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Commission Payout</h5>
+                    <div>
+                        <button class="btn btn-outline-success btn-sm" id="downloadCommissionCsv">
+                            <i class="bi bi-download"></i> Download CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Summary Cards -->
+                    <div class="row mb-4" id="commissionSummary">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Total Sales</h6>
+                                            <h4 id="commissionTotalSales">$0.00</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-graph-up fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Fixed Commissions</h6>
+                                            <h4 id="totalFixedCommissions">$0.00</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-cash-stack fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Variable Commissions</h6>
+                                            <h4 id="totalVariableCommissions">$0.00</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-percent fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Total Payout</h6>
+                                            <h4 id="totalPayout">$0.00</h4>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="bi bi-wallet2 fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personnel Payouts -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="bi bi-people"></i> Personnel Payouts</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Personnel</th>
+                                            <th>Monthly Sales</th>
+                                            <th>Fixed Commission</th>
+                                            <th>Commission %</th>
+                                            <th>Variable Commission</th>
+                                            <th>Total Payout</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="personnelPayoutsTable">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                <i class="bi bi-info-circle"></i> Generate report to view commission payouts
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="reportsLoadingIndicator" class="text-center" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Generating report...</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/config.js"></script>
+    <script src="~/js/api-client.js"></script>
+    <script src="~/js/reports-manager.js"></script>
+}
