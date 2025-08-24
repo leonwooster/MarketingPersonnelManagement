@@ -124,15 +124,18 @@ ReportsManager.prototype.generateManagementReport = function(year, month, person
     $.ajax({
         url: url,
         method: 'GET',
+        dataType: 'json',
         success: function(response) {
-            if (response.success) {
+            console.log('Management report response:', response);
+            if (response && response.success && response.data) {
                 self.currentReportData = response.data;
                 self.renderManagementReport(response.data);
             } else {
-                self.showError('Failed to generate report: ' + response.message);
+                self.showError('Failed to generate report: ' + (response ? response.message : 'Invalid response'));
             }
         },
         error: function(xhr, status, error) {
+            console.error('AJAX Error:', xhr, status, error);
             self.showError('Error generating report: ' + error);
         },
         complete: function() {
@@ -151,15 +154,18 @@ ReportsManager.prototype.generateCommissionReport = function(year, month, person
     $.ajax({
         url: url,
         method: 'GET',
+        dataType: 'json',
         success: function(response) {
-            if (response.success) {
+            console.log('Commission report response:', response);
+            if (response && response.success && response.data) {
                 self.currentReportData = response.data;
                 self.renderCommissionReport(response.data);
             } else {
-                self.showError('Failed to generate report: ' + response.message);
+                self.showError('Failed to generate report: ' + (response ? response.message : 'Invalid response'));
             }
         },
         error: function(xhr, status, error) {
+            console.error('AJAX Error:', xhr, status, error);
             self.showError('Error generating report: ' + error);
         },
         complete: function() {
@@ -169,18 +175,25 @@ ReportsManager.prototype.generateCommissionReport = function(year, month, person
 };
 
 ReportsManager.prototype.renderManagementReport = function(data) {
+    if (!data || !data.summary) {
+        console.error('Invalid data passed to renderManagementReport:', data);
+        this.showError('Invalid report data received');
+        return;
+    }
+    
     // Update summary cards
-    $('#totalSales').text(this.formatCurrency(data.Summary.TotalSales));
-    $('#totalTransactions').text(data.Summary.TotalTransactions.toLocaleString());
-    $('#averagePerPerson').text(this.formatCurrency(data.Summary.AveragePerPerson));
-    $('#noSalesDays').text(data.Summary.DaysWithNoSales + ' / ' + data.Summary.DaysInMonth);
+    $('#totalSales').text(this.formatCurrency(data.summary.totalSales || 0));
+    $('#totalTransactions').text((data.summary.totalTransactions || 0).toLocaleString());
+    $('#averagePerPerson').text(this.formatCurrency(data.summary.averagePerPerson || 0));
+    $('#noSalesDays').text((data.summary.daysWithNoSales || 0) + ' / ' + (data.summary.daysInMonth || 0));
     
     // Update top performers table
     var $tbody = $('#topPerformersTable');
     $tbody.empty();
     
-    if (data.TopPerformers && data.TopPerformers.length > 0) {
-        $.each(data.TopPerformers, function(index, performer) {
+    if (data.topPerformers && data.topPerformers.length > 0) {
+        var self = this;
+        $.each(data.topPerformers, function(index, performer) {
             var rank = index + 1;
             var rankIcon = '';
             if (rank === 1) rankIcon = '<i class="bi bi-trophy-fill text-warning"></i> ';
@@ -189,40 +202,44 @@ ReportsManager.prototype.renderManagementReport = function(data) {
             
             var row = '<tr>' +
                 '<td>' + rankIcon + rank + '</td>' +
-                '<td>' + performer.PersonnelName + '</td>' +
-                '<td>' + self.formatCurrency(performer.TotalSales) + '</td>' +
-                '<td>' + performer.TransactionCount + '</td>' +
+                '<td>' + performer.personnelName + '</td>' +
+                '<td>' + self.formatCurrency(performer.totalSales) + '</td>' +
+                '<td>' + performer.transactionCount + '</td>' +
             '</tr>';
             $tbody.append(row);
         });
     } else {
         $tbody.html('<tr><td colspan="4" class="text-center text-muted">No sales data found for this period</td></tr>');
     }
-    
-    var self = this;
 };
 
 ReportsManager.prototype.renderCommissionReport = function(data) {
+    if (!data || !data.summary) {
+        console.error('Invalid data passed to renderCommissionReport:', data);
+        this.showError('Invalid commission report data received');
+        return;
+    }
+    
     // Update summary cards
-    $('#commissionTotalSales').text(this.formatCurrency(data.Summary.TotalSales));
-    $('#totalFixedCommissions').text(this.formatCurrency(data.Summary.TotalFixedCommissions));
-    $('#totalVariableCommissions').text(this.formatCurrency(data.Summary.TotalVariableCommissions));
-    $('#totalPayout').text(this.formatCurrency(data.Summary.TotalPayout));
+    $('#commissionTotalSales').text(this.formatCurrency(data.summary.totalSales || 0));
+    $('#totalFixedCommissions').text(this.formatCurrency(data.summary.totalFixedCommissions || 0));
+    $('#totalVariableCommissions').text(this.formatCurrency(data.summary.totalVariableCommissions || 0));
+    $('#totalPayout').text(this.formatCurrency(data.summary.totalPayout || 0));
     
     // Update personnel payouts table
     var $tbody = $('#personnelPayoutsTable');
     $tbody.empty();
     
-    if (data.PersonnelPayouts && data.PersonnelPayouts.length > 0) {
+    if (data.personnelPayouts && data.personnelPayouts.length > 0) {
         var self = this;
-        $.each(data.PersonnelPayouts, function(index, payout) {
+        $.each(data.personnelPayouts, function(index, payout) {
             var row = '<tr>' +
-                '<td>' + payout.PersonnelName + '</td>' +
-                '<td>' + self.formatCurrency(payout.MonthlySales) + '</td>' +
-                '<td>' + self.formatCurrency(payout.CommissionFixed) + '</td>' +
-                '<td>' + self.formatPercentage(payout.CommissionPercentage) + '</td>' +
-                '<td>' + self.formatCurrency(payout.CommissionVariable) + '</td>' +
-                '<td><strong>' + self.formatCurrency(payout.TotalPayout) + '</strong></td>' +
+                '<td>' + payout.personnelName + '</td>' +
+                '<td>' + self.formatCurrency(payout.monthlySales) + '</td>' +
+                '<td>' + self.formatCurrency(payout.commissionFixed) + '</td>' +
+                '<td>' + self.formatPercentage(payout.commissionPercentage) + '</td>' +
+                '<td>' + self.formatCurrency(payout.commissionVariable) + '</td>' +
+                '<td><strong>' + self.formatCurrency(payout.totalPayout) + '</strong></td>' +
             '</tr>';
             $tbody.append(row);
         });

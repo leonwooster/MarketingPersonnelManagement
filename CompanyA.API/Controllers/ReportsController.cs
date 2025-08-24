@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CompanyA.DataAccess;
-using CompanyA.BusinessEntity;
+using CompanyA.DataAccess.Models;
 using System.Text;
 using System.Globalization;
 
@@ -11,9 +11,9 @@ namespace CompanyA.API.Controllers
     [Route("api/[controller]")]
     public class ReportsController : ControllerBase
     {
-        private readonly CompanyADbContext _context;
+        private readonly MarketingDbContext _context;
 
-        public ReportsController(CompanyADbContext context)
+        public ReportsController(MarketingDbContext context)
         {
             _context = context;
         }
@@ -22,6 +22,7 @@ namespace CompanyA.API.Controllers
         public async Task<IActionResult> GetManagementOverview(
             [FromQuery] int? year = null, 
             [FromQuery] int? month = null,
+            [FromQuery] int? personnelId = null,
             [FromQuery] string format = "json")
         {
             try
@@ -33,10 +34,17 @@ namespace CompanyA.API.Controllers
                 var endDate = startDate.AddMonths(1).AddDays(-1);
 
                 // Get sales data for the month
-                var salesData = await _context.Sales
+                var salesQuery = _context.Sales
                     .Include(s => s.Personnel)
-                    .Where(s => s.ReportDate >= startDate && s.ReportDate <= endDate)
-                    .ToListAsync();
+                    .Where(s => s.ReportDate >= startDate && s.ReportDate <= endDate);
+                
+                // Apply personnel filter if specified
+                if (personnelId.HasValue)
+                {
+                    salesQuery = salesQuery.Where(s => s.PersonnelId == personnelId.Value);
+                }
+                
+                var salesData = await salesQuery.ToListAsync();
 
                 // Calculate totals by month
                 var totalSales = salesData.Sum(s => s.SalesAmount);
@@ -115,6 +123,7 @@ namespace CompanyA.API.Controllers
         public async Task<IActionResult> GetCommissionPayout(
             [FromQuery] int? year = null, 
             [FromQuery] int? month = null,
+            [FromQuery] int? personnelId = null,
             [FromQuery] string format = "json")
         {
             try
@@ -126,8 +135,14 @@ namespace CompanyA.API.Controllers
                 var endDate = startDate.AddMonths(1).AddDays(-1);
 
                 // Get personnel with their commission profiles and sales
-                var payoutData = await _context.Personnel
-                    .Include(p => p.CommissionProfile)
+                var personnelBaseQuery = _context.Personnel.Include(p => p.CommissionProfile);
+                
+                // Apply personnel filter if specified
+                var personnelQuery = personnelId.HasValue 
+                    ? personnelBaseQuery.Where(p => p.Id == personnelId.Value)
+                    : personnelBaseQuery;
+                
+                var payoutData = await personnelQuery
                     .Select(p => new
                     {
                         PersonnelId = p.Id,
