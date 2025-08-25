@@ -1,75 +1,108 @@
--- Marketing Personnel Management System
--- Database Schema Creation Script
--- SQL Server 2016+
+-- Marketing Personnel Management Database Schema
+-- Company A - Production Database Setup
 
-USE [Marketing];
+USE master;
 GO
 
--- Drop tables if they exist (for clean re-creation)
-IF OBJECT_ID('dbo.Sales', 'U') IS NOT NULL
-    DROP TABLE dbo.Sales;
+-- Create database if it doesn't exist
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'MarketingPersonnelDB')
+BEGIN
+    CREATE DATABASE MarketingPersonnelDB;
+END
 GO
 
-IF OBJECT_ID('dbo.Personnel', 'U') IS NOT NULL
-    DROP TABLE dbo.Personnel;
-GO
-
-IF OBJECT_ID('dbo.CommissionProfile', 'U') IS NOT NULL
-    DROP TABLE dbo.CommissionProfile;
+USE MarketingPersonnelDB;
 GO
 
 -- Create CommissionProfile table
-CREATE TABLE dbo.CommissionProfile (
-    Id int IDENTITY(1,1) NOT NULL,
-    profile_name int NOT NULL,
-    commission_fixed decimal(10,2) NOT NULL DEFAULT 0.00,
-    commission_percentage decimal(10,6) NOT NULL DEFAULT 0.000000,
-    CONSTRAINT PK_CommissionProfile PRIMARY KEY (Id),
-    CONSTRAINT CK_CommissionProfile_Fixed CHECK (commission_fixed >= 0),
-    CONSTRAINT CK_CommissionProfile_Percentage CHECK (commission_percentage >= 0 AND commission_percentage <= 1)
-);
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='CommissionProfile' AND xtype='U')
+BEGIN
+    CREATE TABLE CommissionProfile (
+        Id int IDENTITY(1,1) PRIMARY KEY,
+        ProfileName int NOT NULL UNIQUE,
+        CommissionFixed decimal(10,2) NOT NULL CHECK (CommissionFixed >= 0),
+        CommissionPercentage decimal(10,6) NOT NULL CHECK (CommissionPercentage >= 0 AND CommissionPercentage <= 1),
+        CreatedDate datetime2 DEFAULT GETDATE(),
+        UpdatedDate datetime2 DEFAULT GETDATE()
+    );
+    
+    PRINT 'CommissionProfile table created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'CommissionProfile table already exists.';
+END
 GO
 
 -- Create Personnel table
-CREATE TABLE dbo.Personnel (
-    Id int IDENTITY(1,1) NOT NULL,
-    name varchar(50) NOT NULL,
-    age int NOT NULL,
-    phone varchar(20) NOT NULL,
-    commission_profile_id int NOT NULL,
-    bank_name varchar(20) NULL,
-    bank_account_no varchar(20) NULL,
-    CONSTRAINT PK_Personnel PRIMARY KEY (Id),
-    CONSTRAINT FK_Personnel_CommissionProfile FOREIGN KEY (commission_profile_id) 
-        REFERENCES dbo.CommissionProfile(Id),
-    CONSTRAINT CK_Personnel_Age CHECK (age >= 19),
-    CONSTRAINT CK_Personnel_Name CHECK (LEN(LTRIM(RTRIM(name))) > 0),
-    CONSTRAINT CK_Personnel_Phone CHECK (LEN(LTRIM(RTRIM(phone))) > 0)
-);
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Personnel' AND xtype='U')
+BEGIN
+    CREATE TABLE Personnel (
+        Id int IDENTITY(1,1) PRIMARY KEY,
+        Name nvarchar(50) NOT NULL,
+        Age int NOT NULL CHECK (Age >= 19),
+        Phone nvarchar(20) NOT NULL,
+        BankName nvarchar(20) NULL,
+        BankAccountNo nvarchar(20) NULL,
+        CommissionProfileId int NOT NULL,
+        CreatedDate datetime2 DEFAULT GETDATE(),
+        UpdatedDate datetime2 DEFAULT GETDATE(),
+        FOREIGN KEY (CommissionProfileId) REFERENCES CommissionProfile(Id)
+    );
+    
+    PRINT 'Personnel table created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'Personnel table already exists.';
+END
 GO
 
--- Create Sales table
-CREATE TABLE dbo.Sales (
-    Id int IDENTITY(1,1) NOT NULL,
-    personnel_id int NOT NULL,
-    report_date datetime NOT NULL,
-    sales_amount decimal(10,2) NOT NULL,
-    CONSTRAINT PK_Sales PRIMARY KEY (Id),
-    CONSTRAINT FK_Sales_Personnel FOREIGN KEY (personnel_id) 
-        REFERENCES dbo.Personnel(Id) ON DELETE CASCADE,
-    CONSTRAINT CK_Sales_Amount CHECK (sales_amount >= 0),
-    CONSTRAINT CK_Sales_Date CHECK (report_date <= GETDATE())
-);
+-- Create Sales table with CASCADE DELETE
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Sales' AND xtype='U')
+BEGIN
+    CREATE TABLE Sales (
+        Id int IDENTITY(1,1) PRIMARY KEY,
+        PersonnelId int NOT NULL,
+        ReportDate date NOT NULL CHECK (ReportDate <= CAST(GETDATE() AS date)),
+        SalesAmount decimal(10,2) NOT NULL CHECK (SalesAmount >= 0),
+        CreatedDate datetime2 DEFAULT GETDATE(),
+        FOREIGN KEY (PersonnelId) REFERENCES Personnel(Id) ON DELETE CASCADE
+    );
+    
+    PRINT 'Sales table created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'Sales table already exists.';
+END
 GO
 
--- Create indexes for performance
-CREATE INDEX IX_Sales_PersonnelId ON dbo.Sales(personnel_id);
+-- Create indexes for better performance
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Personnel_CommissionProfileId')
+BEGIN
+    CREATE INDEX IX_Personnel_CommissionProfileId ON Personnel(CommissionProfileId);
+    PRINT 'Index IX_Personnel_CommissionProfileId created.';
+END
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Sales_PersonnelId')
+BEGIN
+    CREATE INDEX IX_Sales_PersonnelId ON Sales(PersonnelId);
+    PRINT 'Index IX_Sales_PersonnelId created.';
+END
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Sales_ReportDate')
+BEGIN
+    CREATE INDEX IX_Sales_ReportDate ON Sales(ReportDate);
+    PRINT 'Index IX_Sales_ReportDate created.';
+END
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Sales_PersonnelId_ReportDate')
+BEGIN
+    CREATE INDEX IX_Sales_PersonnelId_ReportDate ON Sales(PersonnelId, ReportDate);
+    PRINT 'Index IX_Sales_PersonnelId_ReportDate created.';
+END
 GO
 
-CREATE INDEX IX_Sales_ReportDate ON dbo.Sales(report_date);
+PRINT 'Database schema creation completed successfully!';
 GO
-
-CREATE INDEX IX_Personnel_CommissionProfileId ON dbo.Personnel(commission_profile_id);
-GO
-
-PRINT 'Database schema created successfully.';

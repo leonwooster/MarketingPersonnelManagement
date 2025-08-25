@@ -26,10 +26,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowWebUI", policy =>
     {
-        policy.WithOrigins("http://localhost:5131", "https://localhost:7041")
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowAnyMethod();
     });
 });
 
@@ -79,7 +78,7 @@ builder.Logging.AddDebug();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.MapOpenApi();
     app.UseDeveloperExceptionPage();
