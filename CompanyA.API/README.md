@@ -1,6 +1,6 @@
 # CompanyA.API
 
-REST microservices API for the Marketing Personnel Management System.
+REST API for the Marketing Personnel Management System.
 
 ## Overview
 
@@ -8,11 +8,11 @@ This project provides RESTful endpoints for managing marketing personnel, sales 
 
 ## Technology Stack
 
-- **Framework**: ASP.NET Core Web API (.NET 6+)
+- **Framework**: ASP.NET Core Web API (.NET 9.0)
 - **ORM**: Entity Framework Core
 - **Database**: SQL Server 2016+
 - **Serialization**: System.Text.Json
-- **Validation**: Data Annotations + FluentValidation
+- **Documentation**: Swagger/OpenAPI
 
 ## API Endpoints
 
@@ -48,6 +48,11 @@ GET    /api/reports/commission?month={mm}&year={yyyy}  # Commission payout
 GET    /api/reports/export/{type}?format=csv          # Export reports
 ```
 
+### Health Check
+```
+GET    /health                  # Application health status
+```
+
 ## Validation Rules
 
 ### Personnel
@@ -74,19 +79,15 @@ GET    /api/reports/export/{type}?format=csv          # Export reports
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=Marketing;User Id=sa;Password=999999;TrustServerCertificate=True"
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=Marketing;Trusted_Connection=true;MultipleActiveResultSets=true;TrustServerCertificate=True"
   }
 }
 ```
 
 ### CORS Settings
-```json
-{
-  "Cors": {
-    "AllowedOrigins": ["http://localhost:5000"]
-  }
-}
-```
+- Currently configured with `AllowAnyOrigin()` for development
+- Allows all headers and methods
+- Should be restricted for production deployment
 
 ## Business Rules
 
@@ -150,45 +151,49 @@ dotnet ef database update
 dotnet ef migrations script
 ```
 
-### Testing
-```bash
-# Run unit tests
-dotnet test
+### Swagger Documentation
+- Available at `/swagger` in both Development and Production environments
+- Interactive API testing interface
+- Automatic OpenAPI specification generation
 
-# Run with coverage
-dotnet test --collect:"XPlat Code Coverage"
-```
-
-## Deployment
+## IIS Deployment
 
 ### Build for Production
 ```bash
-dotnet publish -c Release -o ../Deploy/API
+dotnet publish -c Release -o c:\inetpub\CompanyA.API
 ```
 
-### IIS Configuration
-- Target Framework: .NET 6.0+
-- Application Pool: No Managed Code
-- Enable CORS for WebUI origin
+### IIS Configuration Requirements
+- **Application Pool**: No Managed Code, Integrated Pipeline
+- **ASP.NET Core Hosting Bundle**: Must be installed
+- **Directory Permissions**: IIS_IUSRS read/execute access
+- **Logs Directory**: Create `c:\inetpub\CompanyA.API\logs` with write permissions
+
+### Web.config
+The web.config is automatically generated during publish with:
+- AspNetCoreModuleV2 handler
+- Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+- MIME type mappings for static content
+- Error handling configuration
 
 ## Logging
 
 Configured logging levels:
 - **Development**: Information
 - **Production**: Warning
-- **Database**: Warning (EF Core queries)
+- **Database**: Information (EF Core queries)
 
 Log locations:
 - Console (Development)
-- Windows Event Log (Production)
-- File logging (configurable)
+- File logging to `.\logs\stdout` (IIS)
 
 ## Security
 
 - Input validation on all endpoints
 - SQL injection prevention via EF Core
-- CORS configuration for allowed origins
-- No authentication required (per requirements)
+- CORS configuration for cross-origin requests
+- Security headers in web.config
+- No authentication required (per current requirements)
 
 ## Performance
 
@@ -203,5 +208,18 @@ Log locations:
 <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
 <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
 <PackageReference Include="Microsoft.AspNetCore.Cors" />
-<PackageReference Include="FluentValidation.AspNetCore" />
+<PackageReference Include="Microsoft.OpenApi" />
 ```
+
+## Troubleshooting
+
+### Common IIS Issues
+- **HTTP 500.19**: Check web.config for duplicate MIME types or headers
+- **CORS Errors**: Verify CORS policy allows the WebUI origin
+- **Database Connection**: Ensure connection string is correct and accessible
+- **Swagger Not Loading**: Check if environment allows Swagger UI
+
+### Database Issues
+- **Migration Errors**: Ensure EF Core tools are installed
+- **Connection Failures**: Verify SQL Server is running and accessible
+- **Permission Errors**: Check database user permissions

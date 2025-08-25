@@ -4,300 +4,221 @@ Business logic layer for the Marketing Personnel Management System.
 
 ## Overview
 
-This class library contains the core business logic, validation rules, and domain services for managing marketing personnel, sales records, and commission calculations.
+This project contains the business services and logic that orchestrate operations between the API controllers and data access layer. It implements business rules, validation, and complex operations that span multiple entities.
 
-## Architecture
+## Technology Stack
 
-### Service Layer Pattern
-- **PersonnelService**: Personnel management operations
-- **SalesService**: Sales record operations  
-- **CommissionService**: Commission calculations and profiles
-- **ReportService**: Business reporting and analytics
-
-### Dependency Injection
-All services are registered with DI container and injected into API controllers.
+- **Framework**: .NET 9.0 Class Library
+- **Dependencies**: CompanyA.DataAccess, CompanyA.BusinessEntity
+- **Patterns**: Service Layer, Dependency Injection
 
 ## Services
 
-### PersonnelService
+### IPersonnelService / PersonnelService
+Manages personnel business operations:
+- **GetAllPersonnelAsync()**: Retrieves all personnel with commission profiles
+- **GetPersonnelByIdAsync(id)**: Gets single personnel by ID
+- **CreatePersonnelAsync(dto)**: Creates new personnel with validation
+- **UpdatePersonnelAsync(id, dto)**: Updates existing personnel
+- **DeletePersonnelAsync(id, confirm)**: Soft/hard delete with confirmation
+
+**Business Rules**:
+- Age must be >= 19
+- Name is required and limited to 50 characters
+- Phone is required and limited to 20 characters
+- Commission profile must exist
+- Bank details are optional but limited to 20 characters each
+
+### ISalesService / SalesService
+Manages sales record operations:
+- **GetSalesByPersonnelAsync(personnelId, from, to)**: Filtered sales retrieval
+- **CreateSalesAsync(dto)**: Adds new sales record
+- **DeleteSalesAsync(id)**: Removes sales record
+
+**Business Rules**:
+- Sales amount must be >= 0
+- Report date cannot be in the future
+- Personnel must exist for foreign key
+- No editing allowed - add/delete only
+
+### ICommissionProfileService / CommissionProfileService
+Manages commission profile operations:
+- **GetAllProfilesAsync()**: Lists all commission profiles
+- **GetProfileByIdAsync(id)**: Gets single profile
+- **CreateProfileAsync(dto)**: Creates new profile
+- **UpdateProfileAsync(id, dto)**: Updates existing profile
+- **DeleteProfileAsync(id)**: Deletes if not referenced
+
+**Business Rules**:
+- Profile name must be positive integer
+- Commission fixed must be >= 0
+- Commission percentage must be >= 0
+- Cannot delete if personnel reference exists
+
+### IReportsService / ReportsService
+Generates business reports:
+- **GetManagementOverviewAsync(month, year)**: Management dashboard data
+- **GetCommissionPayoutAsync(month, year)**: Finance commission calculations
+- **ExportReportAsync(type, format)**: CSV/JSON export functionality
+
+**Report Types**:
+- **Management Overview**: Monthly totals, top performers, averages, no-sales days
+- **Commission Payout**: Per-person sales and commission calculations
+
+## Data Transfer Objects (DTOs)
+
+### PersonnelDto
 ```csharp
-public interface IPersonnelService
-{
-    Task<IEnumerable<PersonnelDto>> GetAllAsync();
-    Task<PersonnelDto> GetByIdAsync(int id);
-    Task<PersonnelDto> CreateAsync(CreatePersonnelDto dto);
-    Task<PersonnelDto> UpdateAsync(int id, UpdatePersonnelDto dto);
-    Task<bool> DeleteAsync(int id, bool confirmed);
-    Task<bool> ExistsAsync(int id);
-}
-```
-
-### SalesService
-```csharp
-public interface ISalesService
-{
-    Task<IEnumerable<SalesDto>> GetByPersonnelAsync(int personnelId, DateTime? from, DateTime? to);
-    Task<SalesDto> CreateAsync(CreateSalesDto dto);
-    Task<bool> DeleteAsync(int id);
-    Task<decimal> GetMonthlySalesAsync(int personnelId, int month, int year);
-}
-```
-
-### CommissionService
-```csharp
-public interface ICommissionService
-{
-    Task<IEnumerable<CommissionProfileDto>> GetAllProfilesAsync();
-    Task<CommissionProfileDto> GetProfileByIdAsync(int id);
-    Task<CommissionProfileDto> CreateProfileAsync(CreateCommissionProfileDto dto);
-    Task<CommissionProfileDto> UpdateProfileAsync(int id, UpdateCommissionProfileDto dto);
-    Task<bool> DeleteProfileAsync(int id);
-    Task<decimal> CalculateMonthlyCommissionAsync(int personnelId, int month, int year);
-}
-```
-
-### ReportService
-```csharp
-public interface IReportService
-{
-    Task<ManagementReportDto> GetManagementReportAsync(int month, int year);
-    Task<CommissionReportDto> GetCommissionReportAsync(int month, int year);
-    Task<byte[]> ExportReportAsync(string reportType, string format, int month, int year);
-}
-```
-
-## Business Rules
-
-### Personnel Management
-1. **Name Validation**: Required, 1-50 characters, trimmed
-2. **Age Validation**: Must be >= 19 years old
-3. **Phone Validation**: Required, 1-20 characters, non-empty
-4. **Commission Profile**: Must reference existing profile
-5. **Deletion Rules**: Requires confirmation, cascades to sales
-
-### Sales Management
-1. **Personnel Reference**: Must exist in Personnel table
-2. **Date Validation**: Cannot be future date
-3. **Amount Validation**: Must be >= 0, decimal(10,2) precision
-4. **Edit Restriction**: No edit operations allowed, only add/delete
-5. **Cascade Delete**: Removed when personnel is deleted
-
-### Commission Calculations
-1. **Formula**: `Commission = Fixed + (Percentage × Monthly Sales)`
-2. **Precision**: Fixed as decimal(10,2), Percentage as decimal(10,6)
-3. **Validation**: Both values must be >= 0
-4. **Profile Deletion**: Blocked if referenced by personnel
-
-## Validation Framework
-
-### Custom Validators
-```csharp
-public class PersonnelValidator : AbstractValidator<CreatePersonnelDto>
-{
-    public PersonnelValidator()
-    {
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required")
-            .MaximumLength(50).WithMessage("Name cannot exceed 50 characters");
-            
-        RuleFor(x => x.Age)
-            .GreaterThanOrEqualTo(19).WithMessage("Age must be 19 or older");
-            
-        RuleFor(x => x.Phone)
-            .NotEmpty().WithMessage("Phone is required")
-            .MaximumLength(20).WithMessage("Phone cannot exceed 20 characters");
-    }
-}
-```
-
-### Business Rule Validation
-```csharp
-public async Task<ValidationResult> ValidatePersonnelDeletionAsync(int id)
-{
-    var result = new ValidationResult();
-    
-    var personnel = await _repository.GetByIdAsync(id);
-    if (personnel == null)
-    {
-        result.AddError("Personnel not found");
-        return result;
-    }
-    
-    // Additional business rules can be added here
-    return result;
-}
-```
-
-## Domain Models
-
-### Personnel Domain
-```csharp
-public class Personnel
+public class PersonnelDto
 {
     public int Id { get; set; }
     public string Name { get; set; }
     public int Age { get; set; }
     public string Phone { get; set; }
     public int CommissionProfileId { get; set; }
-    public string BankName { get; set; }
-    public string BankAccountNo { get; set; }
-    
-    // Navigation properties
-    public CommissionProfile CommissionProfile { get; set; }
-    public ICollection<Sales> Sales { get; set; }
+    public string? BankName { get; set; }
+    public string? BankAccountNo { get; set; }
+    public CommissionProfileDto? CommissionProfile { get; set; }
 }
 ```
 
-### Sales Domain
+### SalesDto
 ```csharp
-public class Sales
+public class SalesDto
 {
     public int Id { get; set; }
     public int PersonnelId { get; set; }
     public DateTime ReportDate { get; set; }
     public decimal SalesAmount { get; set; }
-    
-    // Navigation properties
-    public Personnel Personnel { get; set; }
+    public PersonnelDto? Personnel { get; set; }
 }
 ```
 
-### Commission Profile Domain
+### CommissionProfileDto
 ```csharp
-public class CommissionProfile
+public class CommissionProfileDto
 {
     public int Id { get; set; }
     public int ProfileName { get; set; }
     public decimal CommissionFixed { get; set; }
     public decimal CommissionPercentage { get; set; }
-    
-    // Navigation properties
-    public ICollection<Personnel> Personnel { get; set; }
 }
 ```
 
-## Exception Handling
+## Validation
 
-### Custom Exceptions
+### Input Validation
+- Data annotations on DTOs
+- Custom validation attributes where needed
+- Business rule validation in service methods
+- Async validation for database constraints
+
+### Error Handling
+- Custom business exceptions
+- Validation result patterns
+- Consistent error messaging
+- Logging of business rule violations
+
+## Dependency Injection
+
+Services are registered in the API's Program.cs:
 ```csharp
-public class BusinessValidationException : Exception
-{
-    public IEnumerable<ValidationError> Errors { get; }
-    
-    public BusinessValidationException(IEnumerable<ValidationError> errors)
-        : base("One or more business validation errors occurred")
-    {
-        Errors = errors;
-    }
-}
-
-public class EntityNotFoundException : Exception
-{
-    public EntityNotFoundException(string entityType, int id)
-        : base($"{entityType} with ID {id} not found")
-    {
-    }
-}
+builder.Services.AddScoped<IPersonnelService, PersonnelService>();
+builder.Services.AddScoped<ISalesService, SalesService>();
+builder.Services.AddScoped<ICommissionProfileService, CommissionProfileService>();
+builder.Services.AddScoped<IReportsService, ReportsService>();
 ```
 
-## Reporting Logic
+## Business Rules Implementation
 
-### Management Reports
-```csharp
-public async Task<ManagementReportDto> GetManagementReportAsync(int month, int year)
-{
-    var startDate = new DateTime(year, month, 1);
-    var endDate = startDate.AddMonths(1).AddDays(-1);
-    
-    return new ManagementReportDto
-    {
-        TotalSales = await CalculateTotalSalesAsync(startDate, endDate),
-        TopPerformers = await GetTopPerformersAsync(startDate, endDate, 5),
-        AveragePerPerson = await CalculateAveragePerPersonAsync(startDate, endDate),
-        DaysWithoutSales = await CountDaysWithoutSalesAsync(startDate, endDate)
-    };
-}
-```
+### Personnel Management
+1. **Age Validation**: Minimum 19 years enforced at service level
+2. **Unique Constraints**: Name uniqueness checked before creation
+3. **Cascade Deletion**: Personnel deletion removes associated sales
+4. **Commission Profile**: Must exist before personnel assignment
 
-### Commission Reports
-```csharp
-public async Task<CommissionReportDto> GetCommissionReportAsync(int month, int year)
-{
-    var personnel = await _personnelRepository.GetAllAsync();
-    var commissions = new List<PersonnelCommissionDto>();
-    
-    foreach (var person in personnel)
-    {
-        var monthlySales = await GetMonthlySalesAsync(person.Id, month, year);
-        var commission = await CalculateCommissionAsync(person, monthlySales);
-        
-        commissions.Add(new PersonnelCommissionDto
-        {
-            PersonnelId = person.Id,
-            PersonnelName = person.Name,
-            MonthlySales = monthlySales,
-            CommissionAmount = commission
-        });
-    }
-    
-    return new CommissionReportDto
-    {
-        Month = month,
-        Year = year,
-        PersonnelCommissions = commissions,
-        TotalCommissions = commissions.Sum(c => c.CommissionAmount)
-    };
-}
-```
+### Sales Management
+1. **Date Validation**: Report date cannot be future date
+2. **Amount Validation**: Sales amount must be non-negative
+3. **Immutability**: Sales records cannot be edited once created
+4. **Personnel Reference**: Must reference existing personnel
 
-## Performance Considerations
-
-### Caching Strategy
-- Cache commission profiles (rarely change)
-- Cache monthly aggregations
-- Use memory cache for frequently accessed data
-
-### Async Operations
-- All database operations are async
-- Proper cancellation token usage
-- Efficient LINQ queries
+### Commission Calculation
+1. **Formula**: `commission_fixed + (commission_percentage × monthly_sales)`
+2. **Precision**: Decimal calculations with proper rounding
+3. **Monthly Aggregation**: Sales grouped by month for calculation
+4. **Zero Handling**: Proper handling of zero sales months
 
 ## Testing
 
 ### Unit Testing
-```csharp
-[Test]
-public async Task CalculateMonthlyCommission_ValidData_ReturnsCorrectAmount()
-{
-    // Arrange
-    var personnelId = 1;
-    var month = 10;
-    var year = 2023;
-    var expectedCommission = 1500.50m;
-    
-    // Act
-    var result = await _commissionService.CalculateMonthlyCommissionAsync(personnelId, month, year);
-    
-    // Assert
-    Assert.AreEqual(expectedCommission, result);
-}
-```
+- Service method testing with mocked dependencies
+- Business rule validation testing
+- Edge case handling verification
+- Async operation testing
+
+### Integration Testing
+- Database integration testing
+- Cross-service operation testing
+- Transaction boundary testing
+- Performance testing for large datasets
+
+## Performance Considerations
+
+### Async Operations
+- All database operations are async
+- Proper async/await usage throughout
+- Cancellation token support where applicable
+
+### Caching Strategy
+- Consider implementing caching for:
+  - Commission profiles (rarely change)
+  - Personnel lookup data
+  - Report calculations (time-based cache)
+
+### Query Optimization
+- Efficient LINQ queries
+- Proper use of Include() for related data
+- Pagination for large result sets
+- Indexed database queries
+
+## Future Enhancements
+
+### Authentication Integration
+- Manager-based data filtering
+- Role-based authorization
+- User context injection
+- Audit trail implementation
+
+### Advanced Features
+- Bulk operations support
+- Data import/export functionality
+- Advanced reporting with charts
+- Email notification system
 
 ## Dependencies
 
 ```xml
-<PackageReference Include="FluentValidation" />
-<PackageReference Include="AutoMapper" />
-<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-<PackageReference Include="Microsoft.Extensions.Logging" />
+<ProjectReference Include="..\CompanyA.DataAccess\CompanyA.DataAccess.csproj" />
+<ProjectReference Include="..\CompanyA.BusinessEntity\CompanyA.BusinessEntity.csproj" />
 ```
 
-## Configuration
+## Development Guidelines
 
-### Service Registration
-```csharp
-services.AddScoped<IPersonnelService, PersonnelService>();
-services.AddScoped<ISalesService, SalesService>();
-services.AddScoped<ICommissionService, CommissionService>();
-services.AddScoped<IReportService, ReportService>();
-```
+### Code Standards
+- Follow SOLID principles
+- Implement proper separation of concerns
+- Use dependency injection consistently
+- Write comprehensive unit tests
+
+### Error Handling
+- Use specific exception types
+- Provide meaningful error messages
+- Log business rule violations
+- Return appropriate HTTP status codes
+
+### Documentation
+- Document all public methods
+- Include business rule explanations
+- Provide usage examples
+- Maintain API documentation
